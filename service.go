@@ -3,22 +3,22 @@ package elibrarysvc
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"sync"
 )
 
 type Service interface {
 	GetArticles(ctx context.Context) ([]Article, error)
-	GetArticle(ctx context.Context, id uuid.UUID) (Article, error)
+	GetArticle(ctx context.Context, id int) (Article, error)
 	PostArticle(ctx context.Context, a Article) error
-	DeleteArticle(ctx context.Context, id uuid.UUID) error
+	DeleteArticle(ctx context.Context, id int) error
 }
 
 type Article struct {
-	Id      uuid.UUID `json:"id"`
-	Title   string    `json:"title,omitempty"`
-	Content string    `json:"context,omitempty"`
-	Author  string    `json:"author,omitempty"`
+	Id      int    `json:"id"`
+	Alias   string `json:"alias,omitempty"`
+	Title   string `json:"title,omitempty"`
+	Content string `json:"context,omitempty"`
+	Author  string `json:"author,omitempty"`
 }
 
 var (
@@ -28,16 +28,16 @@ var (
 
 type inmemService struct {
 	mtx sync.RWMutex
-	m   map[uuid.UUID]Article
+	m   map[int]Article
 }
 
 func NewInmemService() Service {
 	return &inmemService{
-		m: map[uuid.UUID]Article{},
+		m: map[int]Article{},
 	}
 }
 
-func (s *inmemService) GetArticles(ctx context.Context) ([]Article, error) {
+func (s *inmemService) GetArticles(_ context.Context) ([]Article, error) {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
 	articles := make([]Article, 0, len(s.m))
@@ -47,7 +47,7 @@ func (s *inmemService) GetArticles(ctx context.Context) ([]Article, error) {
 	return articles, nil
 }
 
-func (s *inmemService) GetArticle(ctx context.Context, id uuid.UUID) (Article, error) {
+func (s *inmemService) GetArticle(_ context.Context, id int) (Article, error) {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
 	a, ok := s.m[id]
@@ -57,7 +57,7 @@ func (s *inmemService) GetArticle(ctx context.Context, id uuid.UUID) (Article, e
 	return a, nil
 }
 
-func (s *inmemService) PostArticle(ctx context.Context, a Article) error {
+func (s *inmemService) PostArticle(_ context.Context, a Article) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	if _, ok := s.m[a.Id]; !ok {
@@ -67,7 +67,7 @@ func (s *inmemService) PostArticle(ctx context.Context, a Article) error {
 	return nil
 }
 
-func (s *inmemService) DeleteArticle(ctx context.Context, id uuid.UUID) error {
+func (s *inmemService) DeleteArticle(_ context.Context, id int) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	if _, ok := s.m[id]; !ok {
