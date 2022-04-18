@@ -3,6 +3,9 @@ package elibrarysvc
 import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
+	httptransport "github.com/go-kit/kit/transport/http"
+	"net/url"
+	"strings"
 )
 
 type Endpoints struct {
@@ -21,20 +24,25 @@ func MakeServerEndpoints(s Service) Endpoints {
 	}
 }
 
-//func MakeClientEndpoints(instance string) (Endpoints, error) {
-//	if !strings.HasPrefix(instance, "http") {
-//		instance = "http://" + instance
-//	}
-//	tgt, err := url.Parse(instance)
-//	if err != nil {
-//		return Endpoints{}, err
-//	}
-//	tgt.Path = ""
-//
-//	options := []httptransport.ClientOption{}
-//
-//	return Endpoints{}
-//}
+func MakeClientEndpoints(instance string) (Endpoints, error) {
+	if !strings.HasPrefix(instance, "http") {
+		instance = "http://" + instance
+	}
+	tgt, err := url.Parse(instance)
+	if err != nil {
+		return Endpoints{}, err
+	}
+	tgt.Path = ""
+
+	options := []httptransport.ClientOption{}
+
+	return Endpoints{
+		GetArticlesEndpoint:   httptransport.NewClient("GET", tgt, encodeGetArticlesRequest, decodeGetArticlesResponse, options...).Endpoint(),
+		GetArticleEndpoint:    httptransport.NewClient("GET", tgt, encodeGetArticleRequest, decodeGetArticleResponse, options...).Endpoint(),
+		PostArticleEndpoint:   httptransport.NewClient("POST", tgt, encodePostArticleRequest, decodePostArticleResponse, options...).Endpoint(),
+		DeleteArticleEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteArticleRequest, decodeDeleteArticleResponse, options...).Endpoint(),
+	}, nil
+}
 
 func (e Endpoints) GetArticles(ctx context.Context) ([]Article, error) {
 	request := getArticlesRequest{}
