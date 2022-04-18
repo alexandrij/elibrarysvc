@@ -46,8 +46,8 @@ func (e Endpoints) GetArticles(ctx context.Context) ([]Article, error) {
 	return resp.Articles, resp.Err
 }
 
-func (e Endpoints) GetArticle(ctx context.Context, id int) (Article, error) {
-	request := getArticleRequest{Id: id}
+func (e Endpoints) GetArticle(ctx context.Context, id uint64) (Article, error) {
+	request := getArticleRequest{ID: id}
 	response, err := e.GetArticleEndpoint(ctx, request)
 	if err != nil {
 		return Article{}, err
@@ -66,8 +66,8 @@ func (e Endpoints) PostArticle(ctx context.Context, article Article) error {
 	return resp.Err
 }
 
-func (e Endpoints) DeleteArticle(ctx context.Context, id int) error {
-	request := deleteArticleRequest{Id: id}
+func (e Endpoints) DeleteArticle(ctx context.Context, id uint64) error {
+	request := deleteArticleRequest{ID: id}
 	response, err := e.DeleteArticleEndpoint(ctx, request)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func MakeGetArticlesEndpoint(s Service) endpoint.Endpoint {
 func MakeGetArticleEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getArticleRequest)
-		a, e := s.GetArticle(ctx, req.Id)
+		a, e := s.GetArticle(ctx, req.ID)
 		return getArticleResponse{Article: a, Err: e}, nil
 	}
 }
@@ -102,7 +102,7 @@ func MakePostArticleEndpoint(s Service) endpoint.Endpoint {
 func MakeDeleteArticleEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(deleteArticleRequest)
-		e := s.DeleteArticle(ctx, req.Id)
+		e := s.DeleteArticle(ctx, req.ID)
 		return deleteArticleResponse{Err: e}, nil
 	}
 }
@@ -117,7 +117,7 @@ type getArticlesResponse struct {
 func (r getArticlesResponse) error() error { return r.Err }
 
 type getArticleRequest struct {
-	Id int
+	ID uint64
 }
 
 type getArticleResponse struct {
@@ -128,6 +128,7 @@ type getArticleResponse struct {
 func (r getArticleResponse) error() error { return r.Err }
 
 type postArticleRequest struct {
+	ID      uint64
 	Article Article
 }
 
@@ -138,7 +139,7 @@ type postArticleResponse struct {
 func (r postArticleResponse) error() error { return r.Err }
 
 type deleteArticleRequest struct {
-	Id int
+	ID uint64
 }
 
 type deleteArticleResponse struct {

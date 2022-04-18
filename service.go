@@ -4,36 +4,40 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 )
 
 type Service interface {
 	GetArticles(ctx context.Context) ([]Article, error)
-	GetArticle(ctx context.Context, id int) (Article, error)
+	GetArticle(ctx context.Context, id uint64) (Article, error)
 	PostArticle(ctx context.Context, a Article) error
-	DeleteArticle(ctx context.Context, id int) error
+	DeleteArticle(ctx context.Context, id uint64) error
 }
 
 type Article struct {
-	Id      int    `json:"id"`
-	Alias   string `json:"alias,omitempty"`
-	Title   string `json:"title,omitempty"`
-	Content string `json:"context,omitempty"`
-	Author  string `json:"author,omitempty"`
+	ID      uint64    `json:"id"`
+	Alias   string    `json:"alias,omitempty"`
+	Title   string    `json:"title,omitempty"`
+	Content string    `json:"content,omitempty"`
+	Href    string    `json:"href,omitempty"`
+	Author  string    `json:"author,omitempty"`
+	Created time.Time `json:"created,omitempty"`
 }
 
 var (
-	ErrAlreadyExists = errors.New("already exists")
-	ErrNotFound      = errors.New("not found")
+	ErrInconsistentIDs = errors.New("inconsistent IDs")
+	ErrAlreadyExists   = errors.New("already exists")
+	ErrNotFound        = errors.New("not found")
 )
 
 type inmemService struct {
 	mtx sync.RWMutex
-	m   map[int]Article
+	m   map[uint64]Article
 }
 
 func NewInmemService() Service {
 	return &inmemService{
-		m: map[int]Article{},
+		m: map[uint64]Article{},
 	}
 }
 
@@ -47,7 +51,7 @@ func (s *inmemService) GetArticles(_ context.Context) ([]Article, error) {
 	return articles, nil
 }
 
-func (s *inmemService) GetArticle(_ context.Context, id int) (Article, error) {
+func (s *inmemService) GetArticle(_ context.Context, id uint64) (Article, error) {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
 	a, ok := s.m[id]
@@ -60,14 +64,14 @@ func (s *inmemService) GetArticle(_ context.Context, id int) (Article, error) {
 func (s *inmemService) PostArticle(_ context.Context, a Article) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	if _, ok := s.m[a.Id]; !ok {
+	if _, ok := s.m[a.ID]; !ok {
 		return ErrAlreadyExists
 	}
-	s.m[a.Id] = a
+	s.m[a.ID] = a
 	return nil
 }
 
-func (s *inmemService) DeleteArticle(_ context.Context, id int) error {
+func (s *inmemService) DeleteArticle(_ context.Context, id uint64) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	if _, ok := s.m[id]; !ok {
