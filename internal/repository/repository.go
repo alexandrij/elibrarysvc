@@ -11,3 +11,7 @@ type Articles interface {
 	PostArticle(ctx context.Context, a domain.Article) error
 	DeleteArticle(ctx context.Context, id domain.ArticleID) error
 }
+
+type Repositories struct {
+	Articles Articles
+}
