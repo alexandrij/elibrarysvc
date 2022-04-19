@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"elibrarysvc/internal/domain"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Articles interface {
@@ -14,4 +15,16 @@ type Articles interface {
 
 type Repositories struct {
 	Articles Articles
+}
+
+func NewInmemRepositories() *Repositories {
+	return &Repositories{
+		Articles: NewArticlesInmemRepo(),
+	}
+}
+
+func NewPgxRepositories(conn *pgxpool.Conn) *Repositories {
+	return &Repositories{
+		Articles: NewArticlesPgxRepo(conn),
+	}
 }

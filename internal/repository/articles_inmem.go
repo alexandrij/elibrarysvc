@@ -13,47 +13,53 @@ var (
 	ErrNotFound        = errors.New("not found")
 )
 
-type ArticlesRepo struct {
+type ArticlesInmemRepo struct {
 	mtx sync.RWMutex
 	m   map[domain.ArticleID]domain.Article
 }
 
-func (s *ArticlesRepo) GetArticles(_ context.Context) ([]domain.Article, error) {
-	s.mtx.RLock()
-	defer s.mtx.RUnlock()
-	articles := make([]domain.Article, 0, len(s.m))
-	for _, a := range s.m {
+func NewArticlesInmemRepo() *ArticlesInmemRepo {
+	return &ArticlesInmemRepo{
+		m: map[domain.ArticleID]domain.Article{},
+	}
+}
+
+func (r *ArticlesInmemRepo) GetArticles(_ context.Context) ([]domain.Article, error) {
+	r.mtx.RLock()
+	defer r.mtx.RUnlock()
+	articles := make([]domain.Article, 0, len(r.m))
+	for _, a := range r.m {
 		articles = append(articles, a)
 	}
 	return articles, nil
 }
 
-func (s *ArticlesRepo) GetArticle(_ context.Context, id domain.ArticleID) (domain.Article, error) {
-	s.mtx.RLock()
-	defer s.mtx.RUnlock()
-	a, ok := s.m[id]
+func (r *ArticlesInmemRepo) GetArticle(_ context.Context, id domain.ArticleID) (domain.Article, error) {
+	r.mtx.RLock()
+	defer r.mtx.RUnlock()
+	a, ok := r.m[id]
 	if !ok {
 		return domain.Article{}, ErrNotFound
 	}
 	return a, nil
 }
 
-func (s *ArticlesRepo) PostArticle(_ context.Context, a domain.Article) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	if _, ok := s.m[a.ID]; !ok {
+func (r *ArticlesInmemRepo) PostArticle(_ context.Context, a domain.Article) error {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	if _, ok := r.m[a.ID]; !ok {
 		return ErrAlreadyExists
 	}
-	s.m[a.ID] = a
+	r.m[a.ID] = a
 	return nil
 }
 
-func (s *ArticlesRepo) DeleteArticle(_ context.Context, id domain.ArticleID) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	if _, ok := s.m[id]; !ok {
+func (r *ArticlesInmemRepo) DeleteArticle(_ context.Context, id domain.ArticleID) error {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	if _, ok := r.m[id]; !ok {
 		return ErrNotFound
 	}
-	delete(s.m, id)
+	delete(r.m, id)
 	return nil
 }
