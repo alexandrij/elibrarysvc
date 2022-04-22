@@ -3,14 +3,7 @@ package repository
 import (
 	"context"
 	"elibrarysvc/internal/domain"
-	"errors"
 	"sync"
-)
-
-var (
-	ErrInconsistentIDs = errors.New("inconsistent IDs")
-	ErrAlreadyExists   = errors.New("already exists")
-	ErrNotFound        = errors.New("not found")
 )
 
 type ArticlesInmemRepo struct {
@@ -39,7 +32,7 @@ func (r *ArticlesInmemRepo) GetArticle(_ context.Context, id domain.ArticleID) (
 	defer r.mtx.RUnlock()
 	a, ok := r.m[id]
 	if !ok {
-		return domain.Article{}, ErrNotFound
+		return domain.Article{}, domain.ErrNotFound
 	}
 	return a, nil
 }
@@ -48,7 +41,7 @@ func (r *ArticlesInmemRepo) PostArticle(_ context.Context, a domain.Article) err
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 	if _, ok := r.m[a.ID]; !ok {
-		return ErrAlreadyExists
+		return domain.ErrAlreadyExists
 	}
 	r.m[a.ID] = a
 	return nil
@@ -58,7 +51,7 @@ func (r *ArticlesInmemRepo) DeleteArticle(_ context.Context, id domain.ArticleID
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 	if _, ok := r.m[id]; !ok {
-		return ErrNotFound
+		return domain.ErrNotFound
 	}
 	delete(r.m, id)
 	return nil
