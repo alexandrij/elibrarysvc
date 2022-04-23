@@ -4,11 +4,15 @@ import (
 	"elibrarysvc/internal/middleware"
 	"elibrarysvc/internal/repository"
 	"elibrarysvc/internal/service"
+	"elibrarysvc/internal/transport"
 	"elibrarysvc/pkg/cache"
 	"flag"
+	"fmt"
 	"github.com/go-kit/kit/log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -38,7 +42,21 @@ func main() {
 
 	var handler http.Handler
 	{
-		handler
+		handler = transport.MakeHTTPHandler(services, nil, log.With(logger, "component", "HTTP"))
 	}
+
+	errs := make(chan error)
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+		errs <- fmt.Errorf("%v", <-c)
+	}()
+
+	go func() {
+		logger.Log("transport", "HTTP", "addr", *httpAddr)
+		errs <- http.ListenAndServe(*httpAddr, handler)
+	}()
+
+	logger.Log("exit", <-errs)
 
 }
