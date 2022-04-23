@@ -24,9 +24,9 @@ type Deps struct {
 	CacheTTL int64
 }
 
-func NewServices(deps Deps) *Services {
+func NewServices(deps Deps) Services {
 	articlesService := NewArticlesService(deps.Repos.Articles, deps.Cache, deps.CacheTTL)
-	return &Services{
+	return Services{
 		Articles: articlesService,
 	}
 }
