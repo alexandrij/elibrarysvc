@@ -1,4 +1,4 @@
-package articles
+package transport
 
 import (
 	"bytes"
@@ -9,9 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/tracing/zipkin"
 	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	stdzipkin "github.com/openzipkin/zipkin-go"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -21,13 +23,17 @@ var (
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
 )
 
-func MakeHTTPHandler(s service.Services, logger log.Logger) http.Handler {
+func MakeHTTPHandler(s service.Services, zipkinTracer *stdzipkin.Tracer, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 	e := endpoint.MakeServerEndpoints(s)
 
 	options := []httptransport.ServerOption{
 		httptransport.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		httptransport.ServerErrorEncoder(encodeError),
+	}
+
+	if zipkinTracer != nil {
+		options = append(options, zipkin.HTTPServerTrace(zipkinTracer))
 	}
 
 	r.Methods("GET").Path("/articles/").Handler(httptransport.NewServer(
